@@ -1,10 +1,26 @@
-# Multi-Account AWS Governance using AWS Organizations & Service Control Policies
+# Enterprise Multi-Account AWS Governance using AWS Organizations & Service Control Policies
+
+## Scenario
+
+You have joined an enterprise company as a **Cloud Governance Engineer**. The organization has grown rapidly and now manages multiple AWS accounts for different teams:
+
+* **Development Team**
+* **Testing Team**
+* **Production Team**
+
+Currently, there are no restrictions across accounts. Developers are creating expensive resources in production accounts, and security policies are inconsistent.
+
+**The CTO assigns you a task:**
+
+*"Implement centralized governance across all AWS accounts to enforce security, cost, and compliance policies."*
+
+---
 
 ## Project Overview
 
-This project demonstrates how to implement centralized governance across multiple AWS accounts using **AWS Organizations**, **Organizational Units (OUs)**, and **Service Control Policies (SCPs)**.
+This project demonstrates how to implement **centralized governance for multiple AWS accounts** using **AWS Organizations**, **Organizational Units (OUs)**, and **Service Control Policies (SCPs)**.
 
-In large enterprises, multiple teams use separate AWS accounts for development, testing, and production environments. Without governance controls, developers may create expensive resources or disable critical security services.
+Large organizations typically separate environments such as **Development, Testing, and Production** into different AWS accounts. Without governance controls, developers might accidentally create expensive resources or disable important security services.
 
 This project implements policies to enforce **security, cost control, and compliance** across all AWS accounts.
 
@@ -28,11 +44,11 @@ Account Account   Account
 
 ### Governance Policies
 
-| OU / Level | Policy Applied          | Purpose                                   |
-| ---------- | ----------------------- | ----------------------------------------- |
-| DEV OU     | Deny-Large-EC2-Dev      | Prevent launching expensive EC2 instances |
-| Root       | Deny-Disable-CloudTrail | Prevent disabling security logging        |
-| Root       | Restrict-Regions        | Allow resources only in approved regions  |
+| OU / Level | Policy Applied          | Purpose                                        |
+| ---------- | ----------------------- | ---------------------------------------------- |
+| DEV OU     | Deny-Large-EC2-Dev      | Prevent launching expensive EC2 instances      |
+| Root       | Deny-Disable-CloudTrail | Prevent disabling CloudTrail logging           |
+| Root       | Restrict-Regions        | Restrict resource creation to approved regions |
 
 ---
 
@@ -48,6 +64,8 @@ Account Account   Account
 
 # Organizational Structure
 
+![Organization Structure](01-organization-structure.png)
+
 ```
 Root
  ├── DEV
@@ -60,12 +78,6 @@ Root
 
 Each environment is isolated using separate AWS accounts.
 
-### AWS Organization Structure
-
-![Organization Structure](01-organization-structure.png)
-
-### Organizational Units (OUs)
-
 ![Organizational Units](02-organizational-units.png)
 
 ---
@@ -74,15 +86,13 @@ Each environment is isolated using separate AWS accounts.
 
 ![Service Control Policies](03-scp-policies.png)
 
-### Policy Attachments
-
-![Policy Attachment](04-policy-attachment.png)
+![Policy Attachments](04-policy-attachment.png)
 
 ## 1. Deny Large EC2 Instances (Cost Control)
 
 This policy prevents developers from launching expensive EC2 instance types in the **Dev environment**.
 
-Restricted instance types include:
+Restricted instance types:
 
 * m5.*
 * c5.*
@@ -92,28 +102,28 @@ Purpose:
 
 * Prevent accidental high-cost infrastructure creation.
 
-**Policy JSON:** [deny-large-ec2-dev.json](policies/deny-large-ec2-dev.json)
+Policy JSON:
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "DenyLargeEC2InstancesInDev",
-      "Effect": "Deny",
-      "Action": "ec2:RunInstances",
-      "Resource": "arn:aws:ec2:*:*:instance/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:InstanceType": [
-            "m5.*",
-            "c5.*",
-            "r5.*"
-          ]
-        }
-      }
+ "Version": "2012-10-17",
+ "Statement": [
+  {
+   "Sid": "DenyLargeInstances",
+   "Effect": "Deny",
+   "Action": "ec2:RunInstances",
+   "Resource": "*",
+   "Condition": {
+    "StringLike": {
+     "ec2:InstanceType": [
+      "m5.*",
+      "c5.*",
+      "r5.*"
+     ]
     }
-  ]
+   }
+  }
+ ]
 }
 ```
 
@@ -121,7 +131,7 @@ Purpose:
 
 ## 2. Prevent Disabling CloudTrail (Security Governance)
 
-CloudTrail records all AWS API activities.
+CloudTrail records all AWS API activities across accounts.
 
 This policy prevents:
 
@@ -130,25 +140,24 @@ This policy prevents:
 
 Purpose:
 
-* Maintain security audit logs across all accounts.
+* Maintain security audit logs across the entire organization.
 
-**Policy JSON:** [prevent-cloudtrail-disable.json](policies/prevent-cloudtrail-disable.json)
+Policy JSON:
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "PreventCloudTrailDisable",
-      "Effect": "Deny",
-      "Action": [
-        "cloudtrail:DeleteTrail",
-        "cloudtrail:StopLogging",
-        "cloudtrail:UpdateTrail"
-      ],
-      "Resource": "*"
-    }
-  ]
+ "Version": "2012-10-17",
+ "Statement": [
+  {
+   "Sid": "PreventCloudTrailDisable",
+   "Effect": "Deny",
+   "Action": [
+    "cloudtrail:StopLogging",
+    "cloudtrail:DeleteTrail"
+   ],
+   "Resource": "*"
+  }
+ ]
 }
 ```
 
@@ -156,7 +165,7 @@ Purpose:
 
 ## 3. Restrict AWS Regions (Compliance)
 
-This policy allows resource creation only in approved regions.
+This policy ensures that AWS resources can only be created in approved regions.
 
 Allowed regions:
 
@@ -165,38 +174,35 @@ Allowed regions:
 
 Purpose:
 
-* Enforce compliance and reduce operational complexity.
+* Enforce compliance
+* Reduce operational complexity
+* Prevent resource creation in unauthorized regions
 
-**Policy JSON:** [restrict-regions.json](policies/restrict-regions.json)
+Policy JSON:
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "RestrictRegions",
-      "Effect": "Deny",
-      "NotAction": [
-        "iam:*",
-        "organizations:*",
-        "route53:*",
-        "budgets:*",
-        "waf:*",
-        "cloudfront:*",
-        "support:*",
-        "sts:*"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringNotEquals": {
-          "aws:RequestedRegion": [
-            "ap-south-1",
-            "us-east-1"
-          ]
-        }
-      }
+ "Version": "2012-10-17",
+ "Statement": [
+  {
+   "Sid": "RestrictRegions",
+   "Effect": "Deny",
+   "NotAction": [
+    "iam:*",
+    "organizations:*",
+    "route53:*"
+   ],
+   "Resource": "*",
+   "Condition": {
+    "StringNotEquals": {
+     "aws:RequestedRegion": [
+      "ap-south-1",
+      "us-east-1"
+     ]
     }
-  ]
+   }
+  }
+ ]
 }
 ```
 
@@ -204,12 +210,12 @@ Purpose:
 
 # Validation Process
 
-To validate governance policies:
+To validate the governance policies:
 
-1. Switch to a member account (Dev account).
-2. Attempt to launch a restricted EC2 instance (example: m5.large).
+1. Login to a member account (Dev account).
+2. Attempt to launch a restricted EC2 instance such as **m5.large**.
 3. Attempt to disable CloudTrail logging.
-4. Attempt to deploy resources in a restricted region.
+4. Attempt to create resources in a restricted region.
 
 Expected Result:
 
@@ -217,40 +223,32 @@ Expected Result:
 AccessDenied
 ```
 
-This confirms that Service Control Policies are successfully enforced.
+This confirms that the **Service Control Policies are successfully enforced**.
 
-## Validation Screenshots
+### Validation Screenshots
 
-### 1. EC2 Instance Launch Denied
-
-![Access Denied - EC2](05-access-denied-ec2.png)
-
-Attempting to launch a restricted EC2 instance type (m5.large) in the Dev account results in an **AccessDenied** error, confirming the SCP is working.
-
-### 2. CloudTrail Protection Enforced
+![EC2 Access Denied](05-access-denied-ec2.png)
 
 ![CloudTrail Protection](06-cloudtrail-protection.png)
-
-Attempting to disable or delete CloudTrail is blocked by the SCP, ensuring audit logs remain intact across all accounts.
 
 ---
 
 # Governance Benefits
 
-* Centralized control of AWS accounts
-* Prevents misuse of cloud resources
-* Improves security monitoring
-* Ensures compliance with organizational policies
-* Reduces risk of misconfiguration
+* Centralized governance for multiple AWS accounts
+* Prevents misuse of cloud infrastructure
+* Improves security and audit visibility
+* Enforces compliance policies
+* Reduces operational risk
 
 ---
 
 # Key Learning Outcomes
 
 * Implement AWS multi-account architecture
-* Use Organizational Units for environment separation
+* Use Organizational Units for account grouping
 * Apply Service Control Policies for governance
-* Enforce security and cost management controls
+* Enforce security and cost management policies
 * Understand enterprise cloud governance models
 
 ---
@@ -259,32 +257,40 @@ Attempting to disable or delete CloudTrail is blocked by the SCP, ensuring audit
 
 ### What is AWS Organizations?
 
-AWS Organizations allows centralized management and governance of multiple AWS accounts.
+AWS Organizations is a service that allows centralized management of multiple AWS accounts.
+
+---
 
 ### What are Organizational Units (OUs)?
 
 OUs are logical containers used to group AWS accounts and apply policies collectively.
 
+---
+
 ### What is a Service Control Policy (SCP)?
 
-SCPs define the maximum permissions available for AWS accounts in an organization.
+SCPs define the **maximum permissions available** for accounts in an AWS Organization.
+
+---
 
 ### Do SCPs apply to the management account?
 
-No. SCPs only apply to member accounts within the organization.
+No. SCPs apply only to **member accounts**, not the management account.
 
-### What is the difference between IAM policy and SCP?
+---
 
-| IAM Policy             | SCP                        |
-| ---------------------- | -------------------------- |
-| Grants permissions     | Limits maximum permissions |
-| Applied to users/roles | Applied to AWS accounts    |
+### Difference between IAM Policy and SCP
+
+| IAM Policy             | SCP                           |
+| ---------------------- | ----------------------------- |
+| Grants permissions     | Restricts maximum permissions |
+| Applied to users/roles | Applied to AWS accounts       |
 
 ---
 
 # Conclusion
 
-This project demonstrates how enterprises implement centralized governance using AWS Organizations and Service Control Policies. The solution ensures cost control, security compliance, and operational consistency across multiple AWS environments.
+This project demonstrates how organizations implement **centralized governance using AWS Organizations and Service Control Policies**. The solution ensures strong security, cost control, and compliance across multiple AWS environments.
 
 ---
 
@@ -292,28 +298,31 @@ This project demonstrates how enterprises implement centralized governance using
 
 ```
 Multi-Account-AWS-Governance/
-├── README.md                              # Complete project documentation
-├── architecture-diagram.svg               # Visual architecture diagram
-├── policies/                              # SCP JSON policies
-│   ├── deny-large-ec2-dev.json           # Cost control policy for Dev
-│   ├── prevent-cloudtrail-disable.json   # Security audit policy
-│   └── restrict-regions.json             # Regional compliance policy
-├── 01-organization-structure.png         # AWS Organization setup
-├── 02-organizational-units.png           # OU hierarchy
-├── 03-scp-policies.png                   # Created SCPs
-├── 04-policy-attachment.png              # Policy attachments to OUs
-├── 05-access-denied-ec2.png              # Validation: EC2 denied
-└── 06-cloudtrail-protection.png          # Validation: CloudTrail protected
+│
+├── README.md
+├── architecture-diagram.svg
+│
+├── policies/
+│   ├── deny-large-ec2-dev.json
+│   ├── prevent-cloudtrail-disable.json
+│   └── restrict-regions.json
+│
+├── 01-organization-structure.png
+├── 02-organizational-units.png
+├── 03-scp-policies.png
+├── 04-policy-attachment.png
+├── 05-access-denied-ec2.png
+└── 06-cloudtrail-protection.png
 ```
 
 ---
 
 # Deliverables
 
-✅ **SCP JSON Policies** - All three policies documented in `/policies` folder  
-✅ **Architecture Diagram** - Visual representation of multi-account structure  
-✅ **OU Structure Screenshots** - Complete organizational hierarchy  
-✅ **Policy Enforcement Proof** - Access denied validations captured  
-✅ **Governance Documentation** - Comprehensive README with implementation details
+✔ SCP JSON Policies
+✔ Organizational Unit Structure
+✔ Service Control Policy Attachments
+✔ Governance Validation Proof
+✔ Complete Project Documentation
 
 ---
