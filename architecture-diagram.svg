@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <style>
+      .title { font: bold 24px sans-serif; fill: #232F3E; }
+      .subtitle { font: 16px sans-serif; fill: #545B64; }
+      .label { font: 14px sans-serif; fill: #232F3E; }
+      .policy { font: 12px sans-serif; fill: #D13212; }
+      .box { fill: #FFFFFF; stroke: #232F3E; stroke-width: 2; }
+      .ou-box { fill: #E7F6FF; stroke: #0073BB; stroke-width: 2; }
+      .account-box { fill: #FFF8E1; stroke: #FF9900; stroke-width: 2; }
+      .root-box { fill: #F4F4F4; stroke: #232F3E; stroke-width: 3; }
+      .line { stroke: #545B64; stroke-width: 2; fill: none; }
+      .policy-box { fill: #FFEBEE; stroke: #D13212; stroke-width: 1.5; }
+    </style>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">AWS Multi-Account Governance Architecture</text>
+  
+  <!-- Root -->
+  <rect x="300" y="60" width="200" height="60" rx="5" class="root-box"/>
+  <text x="400" y="85" text-anchor="middle" class="label">AWS Organization</text>
+  <text x="400" y="105" text-anchor="middle" class="subtitle">Root</text>
+  
+  <!-- Lines from Root to OUs -->
+  <line x1="350" y1="120" x2="150" y2="180" class="line"/>
+  <line x1="400" y1="120" x2="400" y2="180" class="line"/>
+  <line x1="450" y1="120" x2="650" y2="180" class="line"/>
+  
+  <!-- DEV OU -->
+  <rect x="50" y="180" width="200" height="80" rx="5" class="ou-box"/>
+  <text x="150" y="205" text-anchor="middle" class="label">DEV OU</text>
+  <text x="150" y="225" text-anchor="middle" class="subtitle">Development Environment</text>
+  <line x1="150" y1="260" x2="150" y2="300" class="line"/>
+  
+  <!-- TEST OU -->
+  <rect x="300" y="180" width="200" height="80" rx="5" class="ou-box"/>
+  <text x="400" y="205" text-anchor="middle" class="label">TEST OU</text>
+  <text x="400" y="225" text-anchor="middle" class="subtitle">Testing Environment</text>
+  <line x1="400" y1="260" x2="400" y2="300" class="line"/>
+  
+  <!-- PROD OU -->
+  <rect x="550" y="180" width="200" height="80" rx="5" class="ou-box"/>
+  <text x="650" y="205" text-anchor="middle" class="label">PROD OU</text>
+  <text x="650" y="225" text-anchor="middle" class="subtitle">Production Environment</text>
+  <line x1="650" y1="260" x2="650" y2="300" class="line"/>
+  
+  <!-- Dev Account -->
+  <rect x="50" y="300" width="200" height="60" rx="5" class="account-box"/>
+  <text x="150" y="325" text-anchor="middle" class="label">Dev Account</text>
+  <text x="150" y="345" text-anchor="middle" class="subtitle">Member Account</text>
+  
+  <!-- Test Account -->
+  <rect x="300" y="300" width="200" height="60" rx="5" class="account-box"/>
+  <text x="400" y="325" text-anchor="middle" class="label">Test Account</text>
+  <text x="400" y="345" text-anchor="middle" class="subtitle">Member Account</text>
+  
+  <!-- Prod Account -->
+  <rect x="550" y="300" width="200" height="60" rx="5" class="account-box"/>
+  <text x="650" y="325" text-anchor="middle" class="label">Prod Account</text>
+  <text x="650" y="345" text-anchor="middle" class="subtitle">Member Account</text>
+  
+  <!-- Service Control Policies Section -->
+  <text x="400" y="410" text-anchor="middle" class="label" style="font-weight: bold;">Service Control Policies (SCPs)</text>
+  
+  <!-- Policy 1: Deny Large EC2 -->
+  <rect x="30" y="430" width="220" height="140" rx="5" class="policy-box"/>
+  <text x="140" y="450" text-anchor="middle" class="policy" style="font-weight: bold;">Deny Large EC2 Instances</text>
+  <text x="140" y="470" text-anchor="middle" class="policy">Applied to: DEV OU</text>
+  <text x="140" y="490" text-anchor="middle" class="policy" style="font-size: 11px;">Blocks: m5.*, c5.*, r5.*</text>
+  <text x="140" y="510" text-anchor="middle" class="policy" style="font-size: 11px;">Purpose: Cost Control</text>
+  <text x="140" y="530" text-anchor="middle" class="policy" style="font-size: 11px;">Prevents expensive</text>
+  <text x="140" y="545" text-anchor="middle" class="policy" style="font-size: 11px;">instance launches</text>
+  <line x1="140" y1="420" x2="140" y2="430" class="line" stroke="#D13212" stroke-dasharray="5,5"/>
+  
+  <!-- Policy 2: Prevent CloudTrail Disable -->
+  <rect x="290" y="430" width="220" height="140" rx="5" class="policy-box"/>
+  <text x="400" y="450" text-anchor="middle" class="policy" style="font-weight: bold;">Prevent CloudTrail Disable</text>
+  <text x="400" y="470" text-anchor="middle" class="policy">Applied to: Root</text>
+  <text x="400" y="490" text-anchor="middle" class="policy" style="font-size: 11px;">Blocks: DeleteTrail,</text>
+  <text x="400" y="505" text-anchor="middle" class="policy" style="font-size: 11px;">StopLogging</text>
+  <text x="400" y="525" text-anchor="middle" class="policy" style="font-size: 11px;">Purpose: Security Audit</text>
+  <text x="400" y="545" text-anchor="middle" class="policy" style="font-size: 11px;">Maintains compliance logs</text>
+  <line x1="400" y1="120" x2="400" y2="430" class="line" stroke="#D13212" stroke-dasharray="5,5"/>
+  
+  <!-- Policy 3: Restrict Regions -->
+  <rect x="550" y="430" width="220" height="140" rx="5" class="policy-box"/>
+  <text x="660" y="450" text-anchor="middle" class="policy" style="font-weight: bold;">Restrict AWS Regions</text>
+  <text x="660" y="470" text-anchor="middle" class="policy">Applied to: Root</text>
+  <text x="660" y="490" text-anchor="middle" class="policy" style="font-size: 11px;">Allowed: ap-south-1,</text>
+  <text x="660" y="505" text-anchor="middle" class="policy" style="font-size: 11px;">us-east-1</text>
+  <text x="660" y="525" text-anchor="middle" class="policy" style="font-size: 11px;">Purpose: Compliance</text>
+  <text x="660" y="545" text-anchor="middle" class="policy" style="font-size: 11px;">Enforces regional limits</text>
+  <line x1="500" y1="120" x2="660" y2="430" class="line" stroke="#D13212" stroke-dasharray="5,5"/>
+</svg>
